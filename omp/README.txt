@@ -1,9 +1,9 @@
-Last name of Student 1:
-First name of Student 1:
-Email of Student 1:
-Last name of Student 2:
-First name of Student 2:
-Email of Student 2:
+Last name of Student 1: Vannier
+First name of Student 1: Olivier
+Email of Student 1: ovannier@ucsb.edu
+Last name of Student 2: Houlihan
+First name of Student 2: Kai
+Email of Student 2: khoulihan@ucsb.edu
 
 
 If CSIL is used for performance assessment instead of Expanse, make sure you evaluate when such a machine is lightly 
