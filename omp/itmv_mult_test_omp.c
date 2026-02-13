@@ -8,11 +8,11 @@
  * no_proc
  */
 
+#include "itmv_mult_omp.h"
+#include "minunit.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "itmv_mult_omp.h"
-#include "minunit.h"
 
 #define MAX_TEST_MATRIX_SIZE 256
 
@@ -41,7 +41,8 @@ void print_itmv_sample(char *msgheader, double A[], double x[], double d[],
                        double y[], int matrix_type, int n, int t) {
   printf("%s Test matrix type %d, size n=%d, t=%d\n", msgheader, matrix_type, n,
          t);
-  if (n < 4 || A == NULL || x == NULL || d == NULL || y == NULL) return;
+  if (n < 4 || A == NULL || x == NULL || d == NULL || y == NULL)
+    return;
   printf("%s check x[0-3] %f, %f, %f, %f\n", msgheader, x[0], x[1], x[2], x[3]);
   printf("%s check d[0-3] are %f, %f, %f, %f\n", msgheader, d[0], d[1], d[2],
          d[3]);
@@ -74,7 +75,8 @@ void initialize(double A[], double x[], double d[], double y[], int n,
     else
       start = 0;
     for (j = start; j < n; j++) {
-      if (i != j) A[i * n + j] = -1.0 / n;
+      if (i != j)
+        A[i * n + j] = -1.0 / n;
     }
   }
 }
@@ -116,8 +118,10 @@ char *validate_vect(char *msgheader, double y[], int n, int t,
                     int matrix_type) {
   int i;
   double *expected;
-  if (n <= 0) return "Failed: 0 or negative size";
-  if (n > MAX_TEST_MATRIX_SIZE) return "Failed: Too big to validate";
+  if (n <= 0)
+    return "Failed: 0 or negative size";
+  if (n > MAX_TEST_MATRIX_SIZE)
+    return "Failed: Too big to validate";
 
   expected = compute_expected(msgheader, n, t, matrix_type);
   for (i = 0; i < n; i++) {
@@ -151,10 +155,14 @@ int allocate_space(double **A, double **x, double **d, double **y, int n) {
   *y = malloc(n * sizeof(double));
   if (*A == NULL || *x == NULL || *d == NULL || *y == NULL) {
     /*Find an error, thus we release space first*/
-    if (*A != NULL) free(*A);
-    if (*x != NULL) free(*x);
-    if (*d != NULL) free(*d);
-    if (*y != NULL) free(*y);
+    if (*A != NULL)
+      free(*A);
+    if (*x != NULL)
+      free(*x);
+    if (*d != NULL)
+      free(*d);
+    if (*y != NULL)
+      free(*y);
     succ = 0;
   }
   return succ;
@@ -194,13 +202,14 @@ char *itmv_test(char *testmsg, int test_correctness, int n, int mtype, int t,
   parallel_itmv_mult(thread_count, mappingtype, cyclic_block);
 
   endwtime = get_time();
-  double latency=endwtime-startwtime;
-  double gflops = (double) 2*n*n*t/1e9;
-  if (matrix_type== UPPER_TRIANGULAR)
-           gflops = (double) n*(n+1)*t/1e9;
-  gflops= gflops/latency;
-  printf("%s: Latency = %f sec and %.4f GFLOPS with %d threads. Matrix dimension %d \n", testmsg,
-           latency,  gflops, thread_count, n);
+  double latency = endwtime - startwtime;
+  double gflops = (double)2 * n * n * t / 1e9;
+  if (matrix_type == UPPER_TRIANGULAR)
+    gflops = (double)n * (n + 1) * t / 1e9;
+  gflops = gflops / latency;
+  printf("%s: Latency = %f sec and %.4f GFLOPS with %d threads. Matrix "
+         "dimension %d \n",
+         testmsg, latency, gflops, thread_count, n);
 
   msg = NULL;
   if (test_correctness == TEST_CORRECTNESS) {
@@ -299,23 +308,25 @@ char *itmv_test14a() {
  * matrix.
  */
 void run_all_tests(void) {
-  mu_run_test(itmv_test1);
-  mu_run_test(itmv_test2);
-  mu_run_test(itmv_test3);
-  mu_run_test(itmv_test4);
-  mu_run_test(itmv_test5);
-  mu_run_test(itmv_test6);
-  mu_run_test(itmv_test6a);
-  mu_run_test(itmv_test7);
-  mu_run_test(itmv_test8);
-  mu_run_test(itmv_test8a);
-
   /*
+mu_run_test(itmv_test1);
+mu_run_test(itmv_test2);
+mu_run_test(itmv_test3);
+mu_run_test(itmv_test4);
+mu_run_test(itmv_test5);
+mu_run_test(itmv_test6);
+mu_run_test(itmv_test6a);
+mu_run_test(itmv_test7);
+mu_run_test(itmv_test8);
+mu_run_test(itmv_test8a);*/
+
+  mu_run_test(itmv_test9);
+  mu_run_test(itmv_test10);
+  mu_run_test(itmv_test11);
   mu_run_test(itmv_test12);
   mu_run_test(itmv_test13);
   mu_run_test(itmv_test14);
   mu_run_test(itmv_test14a);
-  */
 }
 
 /*-------------------------------------------------------------------
