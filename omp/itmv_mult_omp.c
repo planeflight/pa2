@@ -80,9 +80,21 @@ void parallel_itmv_mult(int threadcnt, int mappingtype, int chunksize) {
   {
 
     for (k = 0; k < no_iterations; k++) {
-#pragma omp for
-      for (i = 0; i < matrix_dim; i++) {
-        mv_compute(i);
+      if (mappingtype == BLOCK_DYNAMIC) {
+#pragma omp for schedule(dynamic, chunksize)
+        for (i = 0; i < matrix_dim; i++) {
+          mv_compute(i);
+        }
+      } else if (mappingtype == BLOCK_CYCLIC) {
+#pragma omp for schedule(static, chunksize)
+        for (i = 0; i < matrix_dim; i++) {
+          mv_compute(i);
+        }
+      } else if (mappingtype == BLOCK_MAPPING) {
+#pragma omp for schedule(static)
+        for (i = 0; i < matrix_dim; i++) {
+          mv_compute(i);
+        }
       }
 #pragma omp for
       for (i = 0; i < matrix_dim; i++) {
