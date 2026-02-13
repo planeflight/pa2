@@ -51,13 +51,12 @@ void mv_compute(int i) {
  * {y=d+Ax; x=y}
  *
  * In arg:              threadcnt - number of threads to run in parallel
- *                      mappingtype:  BLOCK_MAPPING, BLOCK_CYLIC, BLOCK_DYNAMIC. 
- *                      These constants are defined in itmv_mult_omp.h 
- *                They correspond to OpenMP's omp_sched_static with block size equal 
- *                to number of iterations  divided by number of threads, 
- *              omp_sched_static with basic chunk size equal to  chunksize, 
- *              omp_sched_dynamic with basic chunk size equal to chunksize. 
- *            Type  omp_sched_guided is not required.
+ *                      mappingtype:  BLOCK_MAPPING, BLOCK_CYLIC, BLOCK_DYNAMIC.
+ *                      These constants are defined in itmv_mult_omp.h
+ *                They correspond to OpenMP's omp_sched_static with block size
+ * equal to number of iterations  divided by number of threads, omp_sched_static
+ * with basic chunk size equal to  chunksize, omp_sched_dynamic with basic chunk
+ * size equal to chunksize. Type  omp_sched_guided is not required.
  *
  * Global in vars: matrix_A:  2D matrix A represented by a 1D array.
  *                 vector_d:  vector d
@@ -77,13 +76,19 @@ void parallel_itmv_mult(int threadcnt, int mappingtype, int chunksize) {
   /*Your solutuion with OpenMP*/
   int i, k;
 
-  for (k = 0; k < no_iterations; k++) {
-    for (i = 0; i < matrix_dim; i++) {
-      mv_compute(i);
-    }
+#pragma omp parallel num_threads(threadcnt) private(k)
+  {
 
-    for (i = 0; i < matrix_dim; i++) {
-      vector_x[i] = vector_y[i];
+    for (k = 0; k < no_iterations; k++) {
+#pragma omp for
+      for (i = 0; i < matrix_dim; i++) {
+        mv_compute(i);
+      }
+#pragma omp for
+      for (i = 0; i < matrix_dim; i++) {
+        vector_x[i] = vector_y[i];
+      }
+      // end
     }
   }
 }
@@ -113,7 +118,8 @@ int itmv_mult_seq(double A[], double x[], double d[], double y[],
                   int matrix_type, int n, int t) {
   int i, j, start, k;
 
-  if (n <= 0 || A == NULL || x == NULL || d == NULL || y == NULL) return 0;
+  if (n <= 0 || A == NULL || x == NULL || d == NULL || y == NULL)
+    return 0;
 
   for (k = 0; k < t; k++) {
     for (i = 0; i < n; i++) {
