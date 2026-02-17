@@ -78,7 +78,6 @@ void parallel_itmv_mult(int threadcnt, int mappingtype, int chunksize) {
 
 #pragma omp parallel num_threads(threadcnt) private(k)
   {
-
     for (k = 0; k < no_iterations; k++) {
       if (mappingtype == BLOCK_DYNAMIC) {
 #pragma omp for schedule(dynamic, chunksize)
