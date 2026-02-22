@@ -129,7 +129,6 @@ char *barrier_thread_test(int nthread) {
 
     sum_wait_count += all_wait_count[i];
   }
-
   err = mu_check_assert(
       "In cs140barrier_wait, one and only one thread outputs 1.\n",
       sum_wait_count == TOTAL_ROUND);
