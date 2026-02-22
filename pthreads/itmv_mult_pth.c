@@ -37,18 +37,23 @@ pthread_barrier_t mybarrier; /*It will be initailized at itmv_mult_test_pth.c*/
  * Global in/out vars:
  *        double vector_y[]: vector y
  */
-void mv_compute(int i) {
-  int j, col_start, k;
-  double tmp_y = vector_d[i];
-  if (matrix_type == UPPER_TRIANGULAR) {
-    col_start = i;
-  } else {
-    col_start = 0;
-  }
-  for (j = col_start; j < matrix_dim; j++) {
-    tmp_y += matrix_A[i * matrix_dim + j] * vector_x[j];
-  }
-  vector_y[i] = tmp_y;
+void mv_compute(int i)
+{
+	int j, col_start, k;
+	double tmp_y = vector_d[i];
+	if (matrix_type == UPPER_TRIANGULAR)
+	{
+		col_start = i;
+	}
+	else
+	{
+		col_start = 0;
+	}
+	for (j = col_start; j < matrix_dim; j++)
+	{
+		tmp_y += matrix_A[i * matrix_dim + j] * vector_x[j];
+	}
+	vector_y[i] = tmp_y;
 }
 
 /*---------------------------------------------------------------------
@@ -75,7 +80,28 @@ void mv_compute(int i) {
  * Global out vars:
  *            double vector_y[]:  vector y
  */
-void work_block(long my_rank) { /*Your solution*/ }
+void work_block(long my_rank)
+{
+	float error = 0.0f;
+	int k = 0, i = 0;
+	int block_size = ceil(((double)matrix_dim)/thread_count);
+	int i = my_rank * block_size;
+
+	while (k < no_iterations && error > ERROR_THRESHOLD && i < ((my_rank * block_size) + block_size))
+	{
+		my_compute(i);
+		pthread_barrier_wait();
+		double temp_error = 0;
+		for (int p = 0; p < matrix_dim; p++) {
+			temp_error = abs(vector_y[p] - vector_x[p]);
+			if (temp_error > error) {
+				error = temp_error;
+			}
+		}
+		vector_x = vector_y;
+		pthread_barrier_wait();
+	}
+}
 
 /*---------------------------------------------------------------------
  * Function:  work_blockcyclic
@@ -121,44 +147,54 @@ void work_blockcyclic(long my_rank) { /*Your solution*/ }
  *         matrix/vector pointers are NULL.
  */
 int itmv_mult_seq(double A[], double x[], double d[], double y[],
-                  int matrix_type, int n, int t) {
-  int i, j, start, k, stop;
+				  int matrix_type, int n, int t)
+{
+	int i, j, start, k, stop;
 
-  if (n <= 0 || A == NULL || x == NULL || d == NULL || y == NULL)
-    return 0;
+	if (n <= 0 || A == NULL || x == NULL || d == NULL || y == NULL)
+		return 0;
 
-  for (k = 0; k < t; k++) {
-    // Do matrix-vector computation.
-    for (i = 0; i < n; i++) {
-      y[i] = d[i];
-      if (matrix_type == UPPER_TRIANGULAR) {
-        start = i;
-      } else {
-        start = 0;
-      }
-      for (j = start; j < n; j++) {
-        y[i] += A[i * n + j] * x[j];
-      }
-    }
+	for (k = 0; k < t; k++)
+	{
+		// Do matrix-vector computation.
+		for (i = 0; i < n; i++)
+		{
+			y[i] = d[i];
+			if (matrix_type == UPPER_TRIANGULAR)
+			{
+				start = i;
+			}
+			else
+			{
+				start = 0;
+			}
+			for (j = start; j < n; j++)
+			{
+				y[i] += A[i * n + j] * x[j];
+			}
+		}
 
-    // Check if reach convergence.
-    stop = 1;
-    for (i = 0; i < n && stop; i++)
-      if (fabs(x[i] - y[i]) > ERROR_THRESHOLD) {
-        stop = 0;
-      }
+		// Check if reach convergence.
+		stop = 1;
+		for (i = 0; i < n && stop; i++)
+			if (fabs(x[i] - y[i]) > ERROR_THRESHOLD)
+			{
+				stop = 0;
+			}
 
-    if (stop) {
+		if (stop)
+		{
 #ifdef DEBUG1
-      printf("Reach convergence with %d iterations.\n", k);
+			printf("Reach convergence with %d iterations.\n", k);
 #endif
-      break;
-    }
+			break;
+		}
 
-    // Update x.
-    for (i = 0; i < n; i++) {
-      x[i] = y[i];
-    }
-  }
-  return 1;
+		// Update x.
+		for (i = 0; i < n; i++)
+		{
+			x[i] = y[i];
+		}
+	}
+	return 1;
 }
