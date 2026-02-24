@@ -83,13 +83,13 @@ void mv_compute(int i)
 void work_block(long my_rank)
 {
 	float error = 0.0f;
-	int k = 0, i = 0;
 	int block_size = ceil(((double)matrix_dim)/thread_count);
-	int i = my_rank * block_size;
+	int k = 0, i = my_rank * block_size;
 
-	while (k < no_iterations && error > ERROR_THRESHOLD && i < ((my_rank * block_size) + block_size))
+	while (k < no_iterations && error > ERROR_THRESHOLD && i < ((my_rank * block_size) + block_size) && i < matrix_dim)
 	{
 		my_compute(i);
+		i++;
 		pthread_barrier_wait();
 		double temp_error = 0;
 		for (int p = 0; p < matrix_dim; p++) {
@@ -127,7 +127,27 @@ void work_block(long my_rank)
  * Global out vars:
  *            double vector_y[]:  vector y
  */
-void work_blockcyclic(long my_rank) { /*Your solution*/ }
+void work_blockcyclic(long my_rank) { 	
+	float error = 0.0f;
+	int block_size = ceil(((double)matrix_dim)/thread_count);
+	int k = 0, i = my_rank * block_size;
+
+	while (k < no_iterations && error > ERROR_THRESHOLD && i < matrix_dim)
+	{
+		my_compute(i);
+		i += block_size;
+		pthread_barrier_wait();
+		double temp_error = 0;
+		for (int p = 0; p < matrix_dim; p++) {
+			temp_error = abs(vector_y[p] - vector_x[p]);
+			if (temp_error > error) {
+				error = temp_error;
+			}
+		}
+		vector_x = vector_y;
+		pthread_barrier_wait();
+	} 
+}
 
 /*-------------------------------------------------------------------
  * Function:  itmv_mult_seq
