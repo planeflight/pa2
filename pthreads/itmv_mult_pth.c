@@ -82,24 +82,26 @@ void mv_compute(int i)
  */
 void work_block(long my_rank)
 {
-	float error = 0.0f;
-	int block_size = ceil(((double)matrix_dim)/thread_count);
+	double error = __DBL_MAX__;
+	int block_size = ceil((double)matrix_dim/thread_count);
 	int k = 0, i = my_rank * block_size;
-
-	while (k < no_iterations && error > ERROR_THRESHOLD && i < ((my_rank * block_size) + block_size) && i < matrix_dim)
-	{
-		my_compute(i);
-		i++;
-		pthread_barrier_wait();
+	while (k < no_iterations && error >= ERROR_THRESHOLD) {
+		while (i < ((my_rank * block_size) + block_size) && i < matrix_dim) {
+			mv_compute(i);
+			i++;
+		}
+		pthread_barrier_wait(&mybarrier);
 		double temp_error = 0;
 		for (int p = 0; p < matrix_dim; p++) {
-			temp_error = abs(vector_y[p] - vector_x[p]);
+			temp_error = fabs(vector_y[p] - vector_x[p]);
+			vector_x[p] = vector_y[p];
 			if (temp_error > error) {
 				error = temp_error;
 			}
 		}
-		vector_x = vector_y;
-		pthread_barrier_wait();
+		pthread_barrier_wait(&mybarrier);
+		i = my_rank * block_size;
+		k++;
 	}
 }
 
@@ -128,25 +130,30 @@ void work_block(long my_rank)
  *            double vector_y[]:  vector y
  */
 void work_blockcyclic(long my_rank) { 	
-	float error = 0.0f;
-	int block_size = ceil(((double)matrix_dim)/thread_count);
-	int k = 0, i = my_rank * block_size;
+	double error = __DBL_MAX__;
+	int k = 0, i = my_rank * cyclic_blocksize;
 
-	while (k < no_iterations && error > ERROR_THRESHOLD && i < matrix_dim)
-	{
-		my_compute(i);
-		i += block_size;
-		pthread_barrier_wait();
+	while (k < no_iterations && error >= ERROR_THRESHOLD) {
+		while (i < matrix_dim) {
+			int limit = i + cyclic_blocksize;
+			for (i < limit; i++;) {
+				mv_compute(i);
+			}
+			i += ((thread_count-1) * cyclic_blocksize) + 1;
+		}
+		pthread_barrier_wait(&mybarrier);
 		double temp_error = 0;
 		for (int p = 0; p < matrix_dim; p++) {
-			temp_error = abs(vector_y[p] - vector_x[p]);
+			temp_error = fabs(vector_y[p] - vector_x[p]);
+			vector_x[p] = vector_y[p];
 			if (temp_error > error) {
 				error = temp_error;
 			}
 		}
-		vector_x = vector_y;
-		pthread_barrier_wait();
-	} 
+		i = my_rank * cyclic_blocksize;
+		pthread_barrier_wait(&mybarrier);
+		k++;
+	}
 }
 
 /*-------------------------------------------------------------------
