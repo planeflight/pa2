@@ -83,30 +83,32 @@ void mv_compute(int i)
  */
 void work_block(long my_rank)
 {
-	double error = __DBL_MAX__;
+	double local_error = __DBL_MAX__;
 	int block_size = ceil((double)matrix_dim/thread_count);
-	int k = 0, i = 0, start = my_rank * thread_count;
+	int k = 0;
+	int start = my_rank * block_size;
 	int end = ((start + block_size) > matrix_dim) ? matrix_dim : (start + block_size);
-	while (k < no_iterations && error >= ERROR_THRESHOLD) {
+	while (k < no_iterations && local_error >= ERROR_THRESHOLD) {
+		int i = start;
 		while (i < end) {
 			mv_compute(i);
 			i++;
 		}
 		pthread_barrier_wait(&mybarrier);
 		double temp_error = 0;
-		error = 0;
+		double glob_error = 0;
 		for (int p = 0; p < matrix_dim; p++) {
 			temp_error = fabs(vector_y[p] - vector_x[p]);
 			if (my_rank == 0) {
-				vector_x[p] = vector_y[p];
+			vector_x[p] = vector_y[p];
 			}	
-			if (temp_error > error) {
-				error = temp_error;
+			if (temp_error > glob_error) {
+				glob_error = temp_error;
 			}
 		}
-		pthread_barrier_wait(&mybarrier);
-		i = start;
+		local_error = glob_error;
 		k++;
+		pthread_barrier_wait(&mybarrier);
 	}
 }
 
