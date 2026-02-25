@@ -126,3 +126,4 @@ Naive 3 loops : Time 7.020562 sec. GFLOPS 1.17.  1.00x
 Mid-point verification looks OK: DGEMM=405.6966, DGEMV=405.6966, Naive=405.6966
 
 # Analysis
+When N increases, Method with via GEMM outperforms the others because it maintains cache locality by performing the computations using blocking which decreases cache misses. When N increases, we amplify the amount of cache misses because we don't have to reload every column back into cache, so GEMM will drastically outperform GEMV or the naive method.
