@@ -109,6 +109,7 @@ void work_block(long my_rank)
 		for (int p = start; p < end; p++) {	
 			vector_x[p] = vector_y[p];
 		}
+		pthread_barrier_wait(&mybarrier);
 	}
 }
 
