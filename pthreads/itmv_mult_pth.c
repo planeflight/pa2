@@ -87,7 +87,7 @@ void work_block(long my_rank)
 	int k = 0;
 	int start = my_rank * block_size;
 	int end = ((start + block_size) > matrix_dim) ? matrix_dim : (start + block_size);
-	while (k < no_iterations && local_error >= ERROR_THRESHOLD) {
+	while (k < no_iterations) {
 		int i = start;
 		while (i < end) {
 			mv_compute(i);
@@ -105,6 +105,9 @@ void work_block(long my_rank)
 		//pthread_barrier_wait(&mybarrier);
 		local_error = glob_error;
 		k++;
+		if (local_error < ERROR_THRESHOLD) {
+			break;
+		}
 		pthread_barrier_wait(&mybarrier);
 		for (int p = start; p < end; p++) {	
 			vector_x[p] = vector_y[p];
