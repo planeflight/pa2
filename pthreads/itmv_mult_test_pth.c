@@ -390,12 +390,10 @@ char *itmv_test14() {
  * Run all tests.  Ignore returned messages.
  */
 void run_all_tests(void) {
-  /*
   mu_run_test(itmv_test1);
   mu_run_test(itmv_test2);
   mu_run_test(itmv_test3);
   mu_run_test(itmv_test4);
-  */
   mu_run_test(itmv_test4c);
   mu_run_test(itmv_test5);
   mu_run_test(itmv_test6);

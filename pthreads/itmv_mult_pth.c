@@ -21,6 +21,7 @@
 #include "itmv_mult_pth.h"
 
 pthread_barrier_t mybarrier; /*It will be initailized at itmv_mult_test_pth.c*/
+pthread_mutex_t error_mutex;
 
 /*---------------------------------------------------------------------
  * Function:            mv_compute
@@ -84,23 +85,27 @@ void work_block(long my_rank)
 {
 	double error = __DBL_MAX__;
 	int block_size = ceil((double)matrix_dim/thread_count);
-	int k = 0, i = my_rank * block_size;
+	int k = 0, i = 0, start = my_rank * thread_count;
+	int end = ((start + block_size) > matrix_dim) ? matrix_dim : (start + block_size);
 	while (k < no_iterations && error >= ERROR_THRESHOLD) {
-		while (i < ((my_rank * block_size) + block_size) && i < matrix_dim) {
+		while (i < end) {
 			mv_compute(i);
 			i++;
 		}
 		pthread_barrier_wait(&mybarrier);
 		double temp_error = 0;
+		error = 0;
 		for (int p = 0; p < matrix_dim; p++) {
 			temp_error = fabs(vector_y[p] - vector_x[p]);
-			vector_x[p] = vector_y[p];
+			if (my_rank == 0) {
+				vector_x[p] = vector_y[p];
+			}	
 			if (temp_error > error) {
 				error = temp_error;
 			}
 		}
 		pthread_barrier_wait(&mybarrier);
-		i = my_rank * block_size;
+		i = start;
 		k++;
 	}
 }
@@ -131,16 +136,18 @@ void work_block(long my_rank)
  */
 void work_blockcyclic(long my_rank) { 	
 	double error = __DBL_MAX__;
-	int k = 0, i = my_rank * cyclic_blocksize;
+	int k = 0, i = 0, start = my_rank * cyclic_blocksize;
 
 	while (k < no_iterations && error >= ERROR_THRESHOLD) {
-		while (i < matrix_dim) {
-			int limit = i + cyclic_blocksize;
-			for (i < limit; i++;) {
+		while (start < matrix_dim) {
+			i = start;
+			while (i < start + cyclic_blocksize && i < matrix_dim) {
 				mv_compute(i);
+				i++;
 			}
-			i += ((thread_count-1) * cyclic_blocksize) + 1;
+			start += (thread_count * cyclic_blocksize);
 		}
+		start = my_rank * cyclic_blocksize;
 		pthread_barrier_wait(&mybarrier);
 		double temp_error = 0;
 		for (int p = 0; p < matrix_dim; p++) {
@@ -150,7 +157,7 @@ void work_blockcyclic(long my_rank) {
 				error = temp_error;
 			}
 		}
-		i = my_rank * cyclic_blocksize;
+		i = 0;
 		pthread_barrier_wait(&mybarrier);
 		k++;
 	}
