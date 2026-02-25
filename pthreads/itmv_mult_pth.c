@@ -21,7 +21,6 @@
 #include "itmv_mult_pth.h"
 
 pthread_barrier_t mybarrier; /*It will be initailized at itmv_mult_test_pth.c*/
-pthread_mutex_t error_mutex;
 
 /*---------------------------------------------------------------------
  * Function:            mv_compute
@@ -94,21 +93,22 @@ void work_block(long my_rank)
 			mv_compute(i);
 			i++;
 		}
-		pthread_barrier_wait(&mybarrier);
+		//pthread_barrier_wait(&mybarrier);
 		double temp_error = 0;
 		double glob_error = 0;
 		for (int p = 0; p < matrix_dim; p++) {
-			temp_error = fabs(vector_y[p] - vector_x[p]);
-			if (my_rank == 0) {
-			vector_x[p] = vector_y[p];
-			}	
+			temp_error = fabs(vector_y[p] - vector_x[p]);	
 			if (temp_error > glob_error) {
 				glob_error = temp_error;
 			}
-		}
+		} 
+		//pthread_barrier_wait(&mybarrier);
 		local_error = glob_error;
 		k++;
 		pthread_barrier_wait(&mybarrier);
+		for (int p = start; p < end; p++) {	
+			vector_x[p] = vector_y[p];
+		}
 	}
 }
 
@@ -138,9 +138,10 @@ void work_block(long my_rank)
  */
 void work_blockcyclic(long my_rank) { 	
 	double error = __DBL_MAX__;
-	int k = 0, i = 0, start = my_rank * cyclic_blocksize;
+	int k = 0, i = 0, start = 0;
 
 	while (k < no_iterations && error >= ERROR_THRESHOLD) {
+		start = my_rank * cyclic_blocksize;
 		while (start < matrix_dim) {
 			i = start;
 			while (i < start + cyclic_blocksize && i < matrix_dim) {
