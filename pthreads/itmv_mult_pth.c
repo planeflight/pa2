@@ -93,7 +93,6 @@ void work_block(long my_rank)
 			mv_compute(i);
 			i++;
 		}
-		//pthread_barrier_wait(&mybarrier);
 		double temp_error = 0;
 		double glob_error = 0;
 		for (int p = 0; p < matrix_dim; p++) {
@@ -102,7 +101,6 @@ void work_block(long my_rank)
 				glob_error = temp_error;
 			}
 		} 
-		//pthread_barrier_wait(&mybarrier);
 		local_error = glob_error;
 		k++;
 		if (local_error < ERROR_THRESHOLD) {
@@ -141,10 +139,10 @@ void work_block(long my_rank)
  *            double vector_y[]:  vector y
  */
 void work_blockcyclic(long my_rank) { 	
-	double error = __DBL_MAX__;
+	double local_error = __DBL_MAX__;
 	int k = 0, i = 0, start = 0;
 
-	while (k < no_iterations && error >= ERROR_THRESHOLD) {
+	while (k < no_iterations) {
 		start = my_rank * cyclic_blocksize;
 		while (start < matrix_dim) {
 			i = start;
@@ -154,19 +152,30 @@ void work_blockcyclic(long my_rank) {
 			}
 			start += (thread_count * cyclic_blocksize);
 		}
+		double temp_error = 0;
+		double glob_error = 0;
+		for (int p = 0; p < matrix_dim; p++) {
+			temp_error = fabs(vector_y[p] - vector_x[p]);	
+			if (temp_error > glob_error) {
+				glob_error = temp_error;
+			}
+		} 
+		local_error = glob_error;
+		k++;
+		if (local_error < ERROR_THRESHOLD) {
+			break;
+		}
 		start = my_rank * cyclic_blocksize;
 		pthread_barrier_wait(&mybarrier);
-		double temp_error = 0;
-		for (int p = 0; p < matrix_dim; p++) {
-			temp_error = fabs(vector_y[p] - vector_x[p]);
-			vector_x[p] = vector_y[p];
-			if (temp_error > error) {
-				error = temp_error;
+		while (start < matrix_dim) {
+			i = start;
+			while (i < start + cyclic_blocksize && i < matrix_dim) {
+				vector_x[i] = vector_y[i];
+				i++;
 			}
+			start += (thread_count * cyclic_blocksize);
 		}
-		i = 0;
 		pthread_barrier_wait(&mybarrier);
-		k++;
 	}
 }
 
